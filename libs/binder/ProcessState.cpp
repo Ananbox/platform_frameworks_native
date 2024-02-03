@@ -42,6 +42,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+//#include <ananbox.h>
+
 #define BINDER_VM_SIZE ((1*1024*1024) - (4096 *2))
 #define DEFAULT_MAX_BINDER_THREADS 15
 
@@ -82,9 +84,192 @@ void ProcessState::setContextObject(const sp<IBinder>& object)
     setContextObject(object, String16("default"));
 }
 
+#define STRICT_MODE_PENALTY_GATHER (0x40 << 16)
+void writeInterfaceToken(Parcel &data, String16 name) {
+    data.writeInt32(STRICT_MODE_PENALTY_GATHER);
+    data.writeInt32(getuid());
+    data.writeInt32(0x53595354);
+    data.writeString16(name);
+}
+
+sp<IBinder> getHostAMS() {
+    sp<IBinder> object(NULL);
+    IPCThreadState* ipc = IPCThreadState::self();
+    {
+        Parcel data, reply;
+        //data.writeInterfaceToken(String16("android.os.IServiceManager"));
+        writeInterfaceToken(data, String16("android.os.IServiceManager"));
+        data.writeString16(String16("activity"));
+        status_t result = ipc->transact(0 /*magic*/, 1, data, &reply, 0);
+        if (result == NO_ERROR) {
+            // android 11: status
+            reply.readInt32();
+            object = reply.readStrongBinder();
+        }
+    }
+
+    ipc->flushCommands();
+    if (object == NULL) {
+        ALOGE("get host AMS failed\n");
+    }
+    return object;
+}
+
+void writeIntent(Parcel &out, const char *mPackage, const char *mClass, bool hasBundle) {
+    // indicate that there is an intent
+    out.writeInt32(1);
+    // mAction
+    out.writeString16(NULL, -1);
+    // uri mData
+    out.writeInt32(0);
+    // mType
+    out.writeString16(NULL, -1);
+    // mIdentifier
+    out.writeString16(NULL, -1);
+    // mFlags
+    out.writeInt32(0);
+    // mPackage
+    out.writeString16(NULL, -1);
+    // mComponent
+    out.writeString16(String16(mPackage));
+    out.writeString16(String16(mClass));
+    // mSourceBounds
+    out.writeInt32(0);
+    // mCategories
+    out.writeInt32(0);
+    // mSelector
+    out.writeInt32(0);
+    // mClipData
+    out.writeInt32(0);
+    // mContentUserHint
+    out.writeInt32(0);
+    // mExtras
+    if (!hasBundle)
+        out.writeInt32(-1);
+}
+
+void writeBroadcastBundle(Parcel &data, const char *key, sp<IBinder> local) {
+    // place of length
+    int prev = data.dataPosition();
+    data.writeInt32(0);
+    // magic number
+    data.writeInt32(0x4C444E42);
+    // element count
+    data.writeInt32(1);
+    // Map
+    // first binder element
+    // key: binder
+    data.writeString16(String16(key));
+    // write type code: VAL_IBINDER
+    data.writeInt32(15);
+    data.writeStrongBinder(local);
+    // finishFlatten
+    data.writeInt32(0b001100);
+    int cur = data.dataPosition();
+    // // go back & write length
+    data.setDataPosition(prev);
+    // write length here
+    data.writeInt32(cur - prev - 4);
+    data.setDataPosition(cur);
+}
+
+void broadCastIntent(sp<IBinder>& ams, sp<IBinder> local) {
+    Parcel data;
+    writeInterfaceToken(data, String16("android.app.IActivityManager"));
+    data.writeStrongBinder(NULL);
+    // finishFlatten
+    data.writeInt32(0);
+    writeIntent(data, "com.github.ananbox", "com.github.ananbox.BinderReceiver", true);
+    writeBroadcastBundle(data, "local", local);
+    data.writeString16(NULL, -1);
+    data.writeStrongBinder(NULL);
+    // finishFlatten
+    data.writeInt32(0);
+    data.writeInt32(0);
+    data.writeString16(NULL, -1);
+    // null bundle
+    data.writeInt32(0);
+    // null string array
+    data.writeInt32(-1);
+    data.writeInt32(-1);
+    data.writeInt32(-1);
+    // null bundle
+    data.writeInt32(0);
+    data.writeBool(true);
+    data.writeBool(false);
+    data.writeInt32(0);
+    ams->transact(14, data, NULL, 0);
+}
+
+class LocalBinder : public BBinder
+{
+    public:
+        sp<IBinder> remoteBinder;
+        LocalBinder(): remoteBinder(NULL) {}
+    protected:
+        virtual status_t    onTransact( uint32_t code,
+                const Parcel& data,
+                Parcel* reply,
+                uint32_t flags = 0);
+};
+
+status_t LocalBinder::onTransact(
+        uint32_t code, const Parcel& data, Parcel* /*reply*/, uint32_t /*flags*/)
+{
+    switch (code) {
+        case 1:
+            //getPid()
+            return NO_ERROR;
+        case 2:
+            //receiveRemoteBinder
+            ALOGD("onReceiveBinder()\n");
+            // enforce descriptor
+            data.readInt32();
+            data.readInt32();
+            data.readInt32();
+            data.readString16();
+
+            remoteBinder = data.readStrongBinder();
+
+            if (remoteBinder != NULL) {
+                ALOGD("get service binder success\n");
+            }
+            else {
+                ALOGE("get service binder failed\n");
+            }
+            return NO_ERROR;
+        default:
+            return NO_ERROR;
+    }
+}
+
+sp<IBinder> ProcessState::getSVMObj() {
+    sp<IBinder> object(NULL);
+    IPCThreadState* ipc = IPCThreadState::self();
+#if 0
+    getSVM(mDriverFD);
+    uint32_t handle = getSVMHandle();
+#endif
+    sp<IBinder> ams(getHostAMS());
+    sp<LocalBinder> local = new LocalBinder();
+    broadCastIntent(ams, local);
+    ALOGD("wait for service binder\n");
+#if 0
+    ProcessState::self()->startThreadPool();
+    while (local->remoteBinder == NULL); 
+    ALOGD("get service binder\n");
+#endif
+    ipc->setupPolling(&mDriverFD);
+    ipc->handlePolledCommands();
+    LOG_ALWAYS_FATAL_IF(local->remoteBinder == NULL, "get service binder failed.  Terminating.");
+    ALOGD("get service binder\n");
+    object = local->remoteBinder;
+    return object;
+}
+
 sp<IBinder> ProcessState::getContextObject(const sp<IBinder>& /*caller*/)
 {
-    return getStrongProxyForHandle(0);
+    return getSVMObj();
 }
 
 void ProcessState::setContextObject(const sp<IBinder>& object, const String16& name)
@@ -93,7 +278,7 @@ void ProcessState::setContextObject(const sp<IBinder>& object, const String16& n
     mContexts.add(name, object);
 }
 
-sp<IBinder> ProcessState::getContextObject(const String16& name, const sp<IBinder>& caller)
+sp<IBinder> ProcessState::getContextObject(const String16& name, const sp<IBinder>& /*caller*/)
 {
     mLock.lock();
     sp<IBinder> object(
@@ -111,6 +296,8 @@ sp<IBinder> ProcessState::getContextObject(const String16& name, const sp<IBinde
         return NULL;
     }
     
+    // ananbox
+#if 0
     IPCThreadState* ipc = IPCThreadState::self();
     {
         Parcel data, reply;
@@ -122,8 +309,11 @@ sp<IBinder> ProcessState::getContextObject(const String16& name, const sp<IBinde
             object = reply.readStrongBinder();
         }
     }
-    
+
     ipc->flushCommands();
+#endif
+
+    object = getSVMObj();
     
     if (object != NULL) setContextObject(object, name);
     return object;
