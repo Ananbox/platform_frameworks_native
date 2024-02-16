@@ -1383,9 +1383,12 @@ int main(int argc, char *argv[]) {
     // Run ss as root so we can see socket marks.
     run_command("DETAILED SOCKET STATE", 10, "ss", "-eionptu", NULL);
 
+    // ananbox: disable drop_root_user
+#if 0
     if (!drop_root_user()) {
         return -1;
     }
+#endif
 
     dumpstate(do_early_screenshot ? "": screenshot_path, version);
 

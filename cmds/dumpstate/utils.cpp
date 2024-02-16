@@ -736,12 +736,15 @@ int run_command_always(const char *title, RootMode root_mode, StdoutMode stdout_
 
     /* handle child case */
     if (pid == 0) {
+        // ananbox: disable drop_root
+#if 0
         if (root_mode == DROP_ROOT && !drop_root_user()) {
         if (!silent) printf("*** fail todrop root before running %s: %s\n", command,
                 strerror(errno));
             MYLOGE("*** could not drop root before running %s: %s\n", command, strerror(errno));
             return -1;
         }
+#endif
 
         if (silent) {
             // Redirect stderr to stdout
@@ -816,6 +819,7 @@ int run_command_always(const char *title, RootMode root_mode, StdoutMode stdout_
     return status;
 }
 
+#if 0
 bool drop_root_user() {
     if (getgid() == AID_SHELL && getuid() == AID_SHELL) {
         MYLOGD("drop_root_user(): already running as Shell");
@@ -861,6 +865,7 @@ bool drop_root_user() {
 
     return true;
 }
+#endif
 
 void send_broadcast(const std::string& action, const std::vector<std::string>& args) {
     if (args.size() > 1000) {
