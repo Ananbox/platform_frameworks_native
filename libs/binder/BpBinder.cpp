@@ -99,6 +99,19 @@ BpBinder::BpBinder(int32_t handle)
     IPCThreadState::self()->incWeakHandle(handle);
 }
 
+BpBinder::BpBinder(int32_t handle, bool incWeak)
+    : mHandle(handle)
+    , mAlive(1)
+    , mObitsSent(0)
+    , mObituaries(NULL)
+{
+    ALOGV("Creating BpBinder %p handle %d\n", this, mHandle);
+
+    extendObjectLifetime(OBJECT_LIFETIME_WEAK);
+    if (incWeak)
+        IPCThreadState::self()->incWeakHandle(handle);
+}
+
 bool BpBinder::isDescriptorCached() const {
     Mutex::Autolock _l(mLock);
     return mDescriptorCache.size() ? true : false;

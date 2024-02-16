@@ -28,6 +28,7 @@ class BpBinder : public IBinder
 {
 public:
                         BpBinder(int32_t handle);
+                        BpBinder(int32_t handle, bool incWeak);
 
     inline  int32_t     handle() const { return mHandle; }
 

@@ -89,6 +89,7 @@ public:
             void                blockUntilThreadAvailable();
 
 private:
+            friend class HostBinder;
                                 IPCThreadState();
                                 ~IPCThreadState();
 

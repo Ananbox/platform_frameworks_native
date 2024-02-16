@@ -16,6 +16,7 @@
 #include <selinux/avc.h>
 
 #include "binder.h"
+#include "hostbinder.h"
 
 #if 0
 #define ALOGI(x...) fprintf(stderr, "svcmgr: " x)
@@ -64,6 +65,7 @@ static int selinux_enabled;
 static char *service_manager_context;
 static struct selabel_handle* sehandle;
 
+#if 0
 static bool check_mac_perms(pid_t spid, uid_t uid, const char *tctx, const char *perm, const char *name)
 {
     char *sctx = NULL;
@@ -142,6 +144,7 @@ static int svc_can_find(const uint16_t *name, size_t name_len, pid_t spid, uid_t
     const char *perm = "find";
     return check_mac_perms_from_lookup(spid, uid, perm, str8(name, name_len)) ? 1 : 0;
 }
+#endif
 
 struct svcinfo
 {
@@ -185,7 +188,7 @@ uint16_t svcmgr_id[] = {
 };
 
 
-uint32_t do_find_service(const uint16_t *s, size_t len, uid_t uid, pid_t spid)
+uint32_t do_find_service(const uint16_t *s, size_t len, uid_t uid,  __attribute__ ((unused)) pid_t spid)
 {
     struct svcinfo *si = find_svc(s, len);
 
@@ -202,9 +205,11 @@ uint32_t do_find_service(const uint16_t *s, size_t len, uid_t uid, pid_t spid)
         }
     }
 
+#if 0
     if (!svc_can_find(s, len, spid, uid)) {
         return 0;
     }
+#endif
 
     return si->handle;
 }
@@ -212,7 +217,7 @@ uint32_t do_find_service(const uint16_t *s, size_t len, uid_t uid, pid_t spid)
 int do_add_service(struct binder_state *bs,
                    const uint16_t *s, size_t len,
                    uint32_t handle, uid_t uid, int allow_isolated,
-                   pid_t spid)
+                   __attribute__ ((unused)) pid_t spid)
 {
     struct svcinfo *si;
 
@@ -221,12 +226,15 @@ int do_add_service(struct binder_state *bs,
 
     if (!handle || (len == 0) || (len > 127))
         return -1;
-
+    
+    // Ananbox: disable svc_can_register
+#if 0
     if (!svc_can_register(s, len, spid, uid)) {
         ALOGE("add_service('%s',%x) uid=%d - PERMISSION DENIED\n",
              str8(s, len), handle, uid);
         return -1;
     }
+#endif
 
     si = find_svc(s, len);
     if (si) {
@@ -274,8 +282,11 @@ int svcmgr_handler(struct binder_state *bs,
     //ALOGI("target=%p code=%d pid=%d uid=%d\n",
     //      (void*) txn->target.ptr, txn->code, txn->sender_pid, txn->sender_euid);
 
+    // ananbox: running as virtual servicemanager
+#if 0
     if (txn->target.ptr != BINDER_SERVICE_MANAGER)
         return -1;
+#endif
 
     if (txn->code == PING_TRANSACTION)
         return 0;
@@ -296,6 +307,8 @@ int svcmgr_handler(struct binder_state *bs,
         return -1;
     }
 
+    // Ananbox: disable selinux
+#if 0
     if (sehandle && selinux_status_updated() > 0) {
         struct selabel_handle *tmp_sehandle = selinux_android_service_context_handle();
         if (tmp_sehandle) {
@@ -303,6 +316,7 @@ int svcmgr_handler(struct binder_state *bs,
             sehandle = tmp_sehandle;
         }
     }
+#endif
 
     switch(txn->code) {
     case SVC_MGR_GET_SERVICE:
@@ -332,11 +346,13 @@ int svcmgr_handler(struct binder_state *bs,
     case SVC_MGR_LIST_SERVICES: {
         uint32_t n = bio_get_uint32(msg);
 
+#if 0
         if (!svc_can_list(txn->sender_pid, txn->sender_euid)) {
             ALOGE("list_service() uid=%d - PERMISSION DENIED\n",
                     txn->sender_euid);
             return -1;
         }
+#endif
         si = svclist;
         while ((n-- > 0) && si)
             si = si->next;
@@ -373,16 +389,16 @@ int main()
 {
     struct binder_state *bs;
 
+#if 0
     bs = binder_open(128*1024);
     if (!bs) {
         ALOGE("failed to open binder driver\n");
         return -1;
     }
-
-    if (binder_become_context_manager(bs)) {
-        ALOGE("cannot become context manager (%s)\n", strerror(errno));
-        return -1;
-    }
+#else
+    bs = malloc(sizeof(*bs));
+    publishSVM(bs);
+#endif
 
     selinux_enabled = is_selinux_enabled();
     sehandle = selinux_android_service_context_handle();

@@ -226,6 +226,8 @@ int binder_parse(struct binder_state *bs, struct binder_io *bio,
         fprintf(stderr,"%s:\n", cmd_name(cmd));
 #endif
         switch(cmd) {
+        // ananbox: BR_SPAWN_LOOPER is OK
+        case BR_SPAWN_LOOPER:
         case BR_NOOP:
             break;
         case BR_TRANSACTION_COMPLETE:

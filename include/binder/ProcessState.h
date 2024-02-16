@@ -66,6 +66,7 @@ public:
 
 private:
     friend class IPCThreadState;
+    friend class HostBinder;
     
                                 ProcessState();
                                 ~ProcessState();
