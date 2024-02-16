@@ -3146,6 +3146,7 @@ status_t SurfaceFlinger::onTransact(
         case GET_HDR_CAPABILITIES:
         {
             // codes that require permission check
+#if 0
             IPCThreadState* ipc = IPCThreadState::self();
             const int pid = ipc->getCallingPid();
             const int uid = ipc->getCallingUid();
@@ -3155,11 +3156,13 @@ status_t SurfaceFlinger::onTransact(
                         "can't access SurfaceFlinger pid=%d, uid=%d", pid, uid);
                 return PERMISSION_DENIED;
             }
+#endif
             break;
         }
         case CAPTURE_SCREEN:
         {
             // codes that require permission check
+#if 0
             IPCThreadState* ipc = IPCThreadState::self();
             const int pid = ipc->getCallingPid();
             const int uid = ipc->getCallingUid();
@@ -3169,6 +3172,7 @@ status_t SurfaceFlinger::onTransact(
                         "can't read framebuffer pid=%d, uid=%d", pid, uid);
                 return PERMISSION_DENIED;
             }
+#endif
             break;
         }
     }
