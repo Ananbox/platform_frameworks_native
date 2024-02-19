@@ -65,16 +65,21 @@ void HostBinderShim30::writeBroadcastBundle(Parcel &data, const char *key, sp<IB
     data.writeInt32(15);
     data.writeStrongBinder(binder);
     // finishFlatten: stability
-    if (binder == NULL)
-        data.writeInt32(0);
-    else
-        data.writeInt32(0b001100);
+    finishFlattenBinder(data, binder);
     int cur = data.dataPosition();
     // // go back & write length
     data.setDataPosition(prev);
     // write length here
     data.writeInt32(cur - prev - 4);
     data.setDataPosition(cur);
+}
+
+void HostBinderShim30::finishFlattenBinder(Parcel &data, sp<IBinder> binder) {
+    if (binder == NULL) {
+        data.writeInt32(0);
+    } else {
+        data.writeInt32(0b001100);
+    }
 }
 
 void HostBinderShim30::broadCastIntent(Parcel &data, const char* key, sp<IBinder> binder) {

@@ -8,8 +8,9 @@ namespace android {
             void writeIntent(Parcel &out, const char *mPackage, const char *mClass, bool hasBundle);
             void writeBroadcastBundle(Parcel &data, const char *key, sp<IBinder> binder);
             void broadCastIntent(Parcel &data, const char* key, sp<IBinder> binder);
-            void sendBroadCast(sp<IBinder> ams, Parcel &data);
+            virtual void sendBroadCast(sp<IBinder> ams, Parcel &data);
             void enforceDescriptor(const Parcel &data);
+            virtual void finishFlattenBinder(Parcel &data, sp<IBinder> binder);
             bool needReadStatus();
     };
 }

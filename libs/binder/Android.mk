@@ -43,7 +43,8 @@ sources := \
     TextOutput.cpp \
     HostBinder.cpp \
     HostBinderShim.cpp \
-    HostBinderShim30.cpp
+    HostBinderShim30.cpp \
+    HostBinderShim31.cpp
 
 LOCAL_PATH:= $(call my-dir)
 

@@ -6,6 +6,10 @@
 #include <binder/HostBinder.h>
 #include <binder/HostBinderShim.h>
 #include <binder/HostBinderShim30.h>
+#include <binder/HostBinderShim31.h>
+
+#include <sys/system_properties.h>
+#include <unistd.h>
 
 namespace android {
 
@@ -41,6 +45,22 @@ status_t LocalBinder::onTransact(
 }
 
 std::shared_ptr<HostBinderShim> HostBinder::getShim() {
+    char value[92] = { 0 };
+    // TODO: better way to get host api-level?
+    // wait for qemu-props to get the properties
+    while (__system_property_get("ro.ananbox.host.api_level", value) < 1)
+        sleep(1);
+    int api_level = atoi(value);
+    ALOGD("HostBinder: api level %d\n", api_level);
+    switch(api_level) {
+        case 31:
+            return std::make_shared<HostBinderShim31>();
+        case 30:
+            return std::make_shared<HostBinderShim30>();
+        // TODO: support more api level here 
+        default:
+            break;
+    }
     return std::make_shared<HostBinderShim30>();
 }
 
