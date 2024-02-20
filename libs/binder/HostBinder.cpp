@@ -83,11 +83,13 @@ sp<IBinder> HostBinder::getSVMObj() {
     sp<IBinder> ams(shim->getHostAMS());
     sp<LocalBinder> local = new LocalBinder(shim);
     shim->broadCastIntent(data, "local", local);
-    shim->sendBroadCast(ams, data);
     ALOGD("wait for service binder\n");
     ipc->setupPolling(&mDriverFD);
-    ipc->handlePolledCommands();
-    LOG_ALWAYS_FATAL_IF(local->remoteBinder == NULL, "get service binder failed.  Terminating.");
+    while (local->remoteBinder == NULL) {
+        sleep(1);
+        shim->sendBroadCast(ams, data);
+        ipc->handlePolledCommands();
+    } 
     ALOGD("get service binder\n");
     object = local->remoteBinder;
     return object;
