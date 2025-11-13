@@ -46,6 +46,7 @@ sources := \
     HostBinderShim.cpp \
     HostBinderShim30.cpp \
     HostBinderShim31.cpp \
+    HostBinderShim35.cpp \
 
 LOCAL_PATH:= $(call my-dir)
 

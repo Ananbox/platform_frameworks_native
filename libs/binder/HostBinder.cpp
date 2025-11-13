@@ -7,6 +7,7 @@
 #include <binder/HostBinderShim.h>
 #include <binder/HostBinderShim30.h>
 #include <binder/HostBinderShim31.h>
+#include <binder/HostBinderShim35.h>
 
 #include <sys/system_properties.h>
 #include <unistd.h>
@@ -53,6 +54,9 @@ std::shared_ptr<HostBinderShim> HostBinder::getShim() {
     int api_level = atoi(value);
     ALOGD("HostBinder: api level %d\n", api_level);
     switch(api_level) {
+        case 35:
+            return std::make_shared<HostBinderShim35>();
+        case 32:
         case 31:
             return std::make_shared<HostBinderShim31>();
         case 30:
