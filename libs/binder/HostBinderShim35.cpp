@@ -7,6 +7,8 @@ namespace android {
 	HostBinderShim30::writeBroadcastBundle(data, key, binder);
 	// no original intent
 	data.writeInt32(0);
+	// API 35: preventIntentRedirect
+	data.writeInt32(0);
     }
 
     void HostBinderShim35::writeIntent(Parcel &out, const char *mPackage, const char *mClass, bool hasBundle) {
@@ -22,7 +24,7 @@ namespace android {
 	out.writeString16(NULL, -1);
 	// mFlags
 	out.writeInt32(0);
-	// mExtendedFlags
+	// API 35: mExtendedFlags
 	out.writeInt32(0);
 	// mPackage
 	out.writeString16(NULL, -1);
@@ -42,6 +44,9 @@ namespace android {
 	// mExtras
 	if (!hasBundle) {
 	    out.writeInt32(-1);
+	    // API 35: no original intent
+	    out.writeInt32(0);
+	    // API 35: preventIntentRedirect
 	    out.writeInt32(0);
 	}
     }
