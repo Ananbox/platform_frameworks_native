@@ -45,6 +45,7 @@ class TextOutput;
 
 class Parcel {
     friend class IPCThreadState;
+    friend class HostBinderShim;
 public:
     class ReadableBlob;
     class WritableBlob;

@@ -76,6 +76,7 @@ namespace android {
 	}
     }
 
+#if 0
     void HostBinderShim36::broadCastIntent(Parcel &data, const char* key, sp<IBinder> binder) {
         writeInterfaceToken(data, String16("android.app.IActivityManager"));
 	// arg0
@@ -116,6 +117,7 @@ namespace android {
 	// arg12
 	data.writeInt32(0);
     }
+#endif
 
     void HostBinderShim36::finishFlattenBinder(Parcel &data, sp<IBinder> binder) {
         data.writeInt32(binder == NULL ? 0 : 0b001100);

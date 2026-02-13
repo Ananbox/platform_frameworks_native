@@ -71,6 +71,7 @@ void HostBinderShim30::writeBroadcastBundle(Parcel &data, const char *key, sp<IB
     data.setDataPosition(prev);
     // write length here
     data.writeInt32(cur - prev - 4);
+    ALOGE("bundle size: %d", cur - prev - 4);
     data.setDataPosition(cur);
 }
 
@@ -82,6 +83,7 @@ void HostBinderShim30::finishFlattenBinder(Parcel &data, sp<IBinder> binder) {
     }
 }
 
+#if 0
 void HostBinderShim30::broadCastIntent(Parcel &data, const char* key, sp<IBinder> binder) {
     writeInterfaceToken(data, String16("android.app.IActivityManager"));
     data.writeStrongBinder(NULL);
@@ -107,6 +109,7 @@ void HostBinderShim30::broadCastIntent(Parcel &data, const char* key, sp<IBinder
     data.writeBool(false);
     data.writeInt32(0);
 }
+#endif
 
 void HostBinderShim30::sendBroadCast(sp<IBinder> ams, Parcel &data) {
     ams->transact(14, data, NULL, 0);

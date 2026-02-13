@@ -7,7 +7,7 @@ namespace android {
             void writeInterfaceToken(Parcel &data, String16 name);
             virtual void writeIntent(Parcel &out, const char *mPackage, const char *mClass, bool hasBundle);
             virtual void writeBroadcastBundle(Parcel &data, const char *key, sp<IBinder> binder);
-            virtual void broadCastIntent(Parcel &data, const char* key, sp<IBinder> binder);
+            //virtual void broadCastIntent(Parcel &data, const char* key, sp<IBinder> binder);
             virtual void sendBroadCast(sp<IBinder> ams, Parcel &data);
             void enforceDescriptor(const Parcel &data);
             virtual void finishFlattenBinder(Parcel &data, sp<IBinder> binder);

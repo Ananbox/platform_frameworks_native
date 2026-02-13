@@ -13,7 +13,7 @@ namespace android {
             virtual void writeInterfaceToken(Parcel &data, String16 name) = 0;
             virtual void writeIntent(Parcel &out, const char *mPackage, const char *mClass, bool hasBundle) = 0;
             virtual void writeBroadcastBundle(Parcel &data, const char *key, sp<IBinder> binder) = 0;
-            virtual void broadCastIntent(Parcel &data, const char* key, sp<IBinder> binder) = 0;
+            virtual void broadCastIntent(Parcel &data, const char* key, sp<IBinder> binder);
             virtual void sendBroadCast(sp<IBinder> ams, Parcel &data) = 0;
             virtual void enforceDescriptor(const Parcel &data) = 0;
             virtual bool needReadStatus() = 0;
