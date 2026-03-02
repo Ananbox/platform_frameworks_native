@@ -636,7 +636,7 @@ bool Parcel::enforceInterface(const String16& interface,
     if (threadState == NULL) {
         threadState = IPCThreadState::self();
     }
-    threadState->restoreCallingIdentity(token);
+    IPCThreadState::self()->restoreCallingIdentity(token);
     if ((threadState->getLastTransactionBinderFlags() &
          IBinder::FLAG_ONEWAY) != 0) {
       // For one-way calls, the callee is running entirely
