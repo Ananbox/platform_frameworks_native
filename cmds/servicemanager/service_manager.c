@@ -295,6 +295,9 @@ int svcmgr_handler(struct binder_state *bs,
     // header with the strict mode policy mask and the interface name.
     // Note that we ignore the strict_policy and don't propagate it
     // further (since we do no outbound RPCs anyway).
+    // ananbox: uid & pid token
+    bio_get_uint32(msg);
+    bio_get_uint32(msg);
     strict_policy = bio_get_uint32(msg);
     s = bio_get_string16(msg, &len);
     if (s == NULL) {

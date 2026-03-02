@@ -616,6 +616,7 @@ bool Parcel::hasFileDescriptors() const
 // Write RPC headers.  (previously just the interface token)
 status_t Parcel::writeInterfaceToken(const String16& interface)
 {
+    writeInt64((((int64_t)getuid())<<32) | (int64_t)getpid());
     writeInt32(IPCThreadState::self()->getStrictModePolicy() |
                STRICT_MODE_PENALTY_GATHER);
     // currently the interface identification token is just its name as a string
@@ -630,10 +631,12 @@ bool Parcel::checkInterface(IBinder* binder) const
 bool Parcel::enforceInterface(const String16& interface,
                               IPCThreadState* threadState) const
 {
+    int64_t token = readInt64();
     int32_t strictPolicy = readInt32();
     if (threadState == NULL) {
         threadState = IPCThreadState::self();
     }
+    threadState->restoreCallingIdentity(token);
     if ((threadState->getLastTransactionBinderFlags() &
          IBinder::FLAG_ONEWAY) != 0) {
       // For one-way calls, the callee is running entirely

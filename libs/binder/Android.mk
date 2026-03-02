@@ -41,7 +41,6 @@ sources := \
     Static.cpp \
     Status.cpp \
     TextOutput.cpp \
-    UidHelper.c \
     HostBinder.cpp \
     HostBinderShim.cpp \
     HostBinderShim30.cpp \

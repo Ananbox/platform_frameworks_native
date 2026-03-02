@@ -40,8 +40,6 @@
 #include <sys/resource.h>
 #include <unistd.h>
 
-#include <binder/UidHelper.h>
-
 #if LOG_NDEBUG
 
 #define IF_LOG_TRANSACTIONS() if (false)
@@ -1067,11 +1065,7 @@ status_t IPCThreadState::executeCommand(int32_t cmd)
             const int32_t origTransactionBinderFlags = mLastTransactionBinderFlags;
 
             mCallingPid = tr.sender_pid;
-            mCallingUid = getCallingUidHelper(getCallingPid());
-            if (mCallingUid == 0) {
-                ALOGD("UidHelper failed, fallback");
-                mCallingUid = tr.sender_euid;
-            }
+            mCallingUid = tr.sender_euid;
             mLastTransactionBinderFlags = tr.flags;
 
             int curPrio = getpriority(PRIO_PROCESS, mMyThreadId);
