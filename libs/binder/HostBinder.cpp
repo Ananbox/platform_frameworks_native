@@ -12,6 +12,7 @@
 
 #include <sys/system_properties.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 namespace android {
 
@@ -83,18 +84,39 @@ HostBinder::HostBinder(binder_state *bs): shim(getShim()) {
     mDriverFD = bs->fd;
 }
 
+int HostBinder::getTransCode() {
+    int code = 0;
+    char buf[16];
+    int fd = open("/trans_code", O_RDONLY);
+    if (fd < 0) {
+        return code;
+    }
+    if (read(fd, buf, sizeof(buf)) > 0) {
+        sscanf(buf, "%d", &code);
+    }
+    close(fd);
+    return code;
+}
+
 sp<IBinder> HostBinder::getSVMObj() {
     Parcel data;
     sp<IBinder> object(NULL);
     IPCThreadState* ipc = IPCThreadState::self();
     sp<IBinder> ams(shim->getHostAMS());
     sp<LocalBinder> local = new LocalBinder(shim);
+    int code = getTransCode();
     shim->broadCastIntent(data, "local", local);
     ALOGD("wait for service binder\n");
     ipc->setupPolling(&mDriverFD);
     while (local->remoteBinder == NULL) {
         sleep(1);
-        shim->sendBroadCast(ams, data);
+        ALOGD("sending broadcast");
+        if (code == 0) {
+            shim->sendBroadCast(ams, data);
+        }
+        else {
+            ams->transact(code, data, NULL, 0);
+        }
         ipc->handlePolledCommands();
     } 
     ALOGD("get service binder\n");
@@ -105,9 +127,15 @@ sp<IBinder> HostBinder::getSVMObj() {
 void HostBinder::publishSVM() {
     sp<IBinder> ams(shim->getHostAMS());
     sp<LocalBinder> binder = new LocalBinder(shim);
+    int code = getTransCode();
     Parcel data;
     shim->broadCastIntent(data, "binder", binder);
-    shim->sendBroadCast(ams, data);
+    if (code == 0) {
+        shim->sendBroadCast(ams, data);
+    }
+    else {
+        ams->transact(code, data, NULL, 0);
+    }
 }
 
 }

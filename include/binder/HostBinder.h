@@ -17,6 +17,7 @@ namespace android {
             sp<IBinder> getSVMObj();
             void publishSVM();
         private:
+            int getTransCode();
             int mDriverFD;
             std::shared_ptr<HostBinderShim> shim;
             std::shared_ptr<HostBinderShim> getShim();
